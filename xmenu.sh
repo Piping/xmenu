@@ -15,7 +15,8 @@ record() {
         # each piped command run in subshell
         read -r X Y W H G ID
         local file="$HOME/Videos/screenrecord-$(date -I).$(date +%s).mp4"
-        notify-send "$file" "Writing to $file ..."
+        echo -n "$file" | xclip -selection clipboard
+        notify-send "$file" "Copied Filename.\nWriting to $file ..."
         ffmpeg -f x11grab -s "$W"x"$H" -i :0.0+$X,$Y -f alsa -i pulse "$file"
     }
 }
@@ -31,8 +32,9 @@ recordStop() {
 screenshot() {
     mkdir -p ~/Pictures
     local file="screenshot-$(date -I)-$(date +%T).png"
-    maim -s | tee "$HOME/Pictures/$file" | xclip -selection clipboard -t image/png
-    notify-send "$file" "Copied to clipboard.\nSaved to $HOME/Pictures"
+    {
+        maim -s | tee "$HOME/Pictures/$file" | xclip -selection clipboard -t image/png
+    } && notify-send "$file" "Copied to clipboard.\nSaved to $HOME/Pictures"
 }
 
 terminal() {
@@ -43,10 +45,23 @@ browser() {
     firefox
 }
 
+filebrowser(){
+   "$0" alacritty -e ranger
+}
+
 gedit() {
     alacritty -e vim "$0" ||
     scite "$@" ||
     exit 1
+}
+
+networkIP() {
+    notify-send "Your Public IP" "$(curl ifconfig.me)"
+}
+
+showdate() {
+    xsetroot -name "$(date +"%Y-%b-%d %k:%M")"
+    echo "$(date) 中文效果"
 }
 
 if [ ! -z $1 ]
@@ -60,9 +75,10 @@ fi
 # name format: IMG:./icons/web.png string
 # cmd format: shell command
 cat <<EOF | xmenu | sh &
-$(date)
+$(showdate)
 
 Applications	rofi -show drun -dpi 192
+FileBrowser	"$0" filebrowser
 
 Terminal (st)	st
 Terminal (alacritty)	alacritty
@@ -84,6 +100,8 @@ Memory: $(free_mem)
 	Relase Memory   	sync; echo 3 > /proc/sys/vm/drop_caches
 Network: $(ip -br a | grep wlp5s0 | awk '{print $3,"    "}')
 	Gateway: $(ip route | grep default | awk '{print $3,"    "}')
+	What is my public IP?	"$0" networkIP
+VPN: (off)
 
 Screenshot	"$0" screenshot
 ScreenRecord	"$0" record
@@ -95,5 +113,6 @@ Power Menu
 	Reboot	reboot
 	Logout	kill -9 -1
 EOF
+
 
 # vim: set list ts=25 sw=25 noexpandtab :
