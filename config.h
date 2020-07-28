@@ -27,7 +27,7 @@ static struct Config config = {
 	.triangle_height = 7,
 
 	/* the icon size is equal to .height_pixels - .iconpadding * 2 */
-	.iconpadding = 2,
+	.iconpadding = 5,
 
 	/* area around the icon, the triangle and the separator */
 	.horzpadding = 8,
