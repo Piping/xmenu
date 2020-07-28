@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 free_mem() {
     free | awk '/Mem/ {printf "%d GB/%d GB\n", $4/1024/1024, $2/1024/1024.0}'
 }
@@ -14,6 +16,27 @@ record() {
         read -r X Y W H G ID
         ffmpeg -f x11grab -s "$W"x"$H" -i :0.0+$X,$Y -f alsa -i pulse ~/Videos/video-$(date -I).$(date +%s).mp4
     }
+}
+
+screenshot() {
+    mkdir -p ~/Pictures
+    local file="screenshot-$(date -I)-$(date +%T).png"
+    maim -s | tee "$HOME/Pictures/$file" | xclip -selection clipboard -t image/png
+    notify-send "$file" "Copied to clipboard.\nSaved to $HOME/Pictures"
+}
+
+terminal() {
+    alacritty
+}
+
+browser() {
+    firefox
+}
+
+gedit() {
+    st -e vim "$0" ||
+    scite "$@" ||
+    exit 1
 }
 
 if [ ! -z $1 ]
@@ -32,8 +55,9 @@ Terminal (st)	st
 Terminal (alacritty)	alacritty
 
 Setting
-	Bluetooth   	firefox
-	Network     	firefox
+	Edit this Menu	"$0" gedit "$0"
+	Bluetooth	"$0" browser
+	Network	"$0" terminal
 
 Volume: $(volume)
 	Mute    	amixer -D pulse sset Master 0%
@@ -48,11 +72,13 @@ Memory: $(free_mem)
 Network: $(ip -br a | grep wlp5s0 | awk '{print $3,"    "}')
 	Gateway: $(ip route | grep default | awk '{print $3,"    "}')
 
-Screenshot	maim -s | tee ~/Pictures/screenshot-$(date -I).png
+Screenshot	"$0" screenshot
 RecordSelection	"$0" record
 
-Shutdown		poweroff
-Reboot			reboot
+Shutdown	poweroff
+Reboot	reboot
+Suspend	systemctl suspend; i3lock
+Logout	kill -9 -1
 EOF
 
 # vim: set list ts=25 sw=25 noexpandtab :
