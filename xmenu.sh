@@ -14,8 +14,18 @@ record() {
     echo $(slop -f "%x %y %w %h %g %i") | {
         # each piped command run in subshell
         read -r X Y W H G ID
-        ffmpeg -f x11grab -s "$W"x"$H" -i :0.0+$X,$Y -f alsa -i pulse ~/Videos/video-$(date -I).$(date +%s).mp4
+        local file="$HOME/Videos/screenrecord-$(date -I).$(date +%s).mp4"
+        notify-send "$file" "Writing to $file ..."
+        ffmpeg -f x11grab -s "$W"x"$H" -i :0.0+$X,$Y -f alsa -i pulse "$file"
     }
+}
+recordStop() {
+    local pid=$(ps aux | awk '/[ ]+ffmpeg.*screenrecord-.*.mp4/ { print $2 }')
+    if [ -z $pid ] ; then
+        echo
+    else
+        printf "\tStop Recording   \tkill -15 $pid"
+    fi
 }
 
 screenshot() {
@@ -34,7 +44,7 @@ browser() {
 }
 
 gedit() {
-    st -e vim "$0" ||
+    alacritty -e vim "$0" ||
     scite "$@" ||
     exit 1
 }
@@ -45,7 +55,10 @@ then
     exit 0
 fi
 
-# IMG:./icons/web.png
+# format: Name <Tab> CMD
+# format: <Tab> <Submenu> CMD
+# name format: IMG:./icons/web.png string
+# cmd format: shell command
 cat <<EOF | xmenu | sh &
 $(date)
 
@@ -55,30 +68,32 @@ Terminal (st)	st
 Terminal (alacritty)	alacritty
 
 Setting
-	Edit this Menu	"$0" gedit "$0"
+	Edit this Menu   	"$0" gedit "$0"
 	Bluetooth	"$0" browser
 	Network	"$0" terminal
 
 Volume: $(volume)
 	Mute    	amixer -D pulse sset Master 0%
-	20%     	amixer -D pulse sset Master 20%
-	40%     	amixer -D pulse sset Master 40%
-	60%     	amixer -D pulse sset Master 60%
-	80%     	amixer -D pulse sset Master 80%
-	100%    	amixer -D pulse sset Master 100%
-	More    	/usr/bin/pavucontrol
+	20%	amixer -D pulse sset Master 20%
+	40%	amixer -D pulse sset Master 40%
+	60%	amixer -D pulse sset Master 60%
+	80%	amixer -D pulse sset Master 80%
+	100%	amixer -D pulse sset Master 100%
+	More	/usr/bin/pavucontrol
 Memory: $(free_mem)
 	Relase Memory   	sync; echo 3 > /proc/sys/vm/drop_caches
 Network: $(ip -br a | grep wlp5s0 | awk '{print $3,"    "}')
 	Gateway: $(ip route | grep default | awk '{print $3,"    "}')
 
 Screenshot	"$0" screenshot
-RecordSelection	"$0" record
+ScreenRecord	"$0" record
+$(recordStop)
 
-Shutdown	poweroff
-Reboot	reboot
 Suspend	systemctl suspend; i3lock
-Logout	kill -9 -1
+Power Menu
+	Shutdown   	poweroff
+	Reboot	reboot
+	Logout	kill -9 -1
 EOF
 
 # vim: set list ts=25 sw=25 noexpandtab :
