@@ -1,6 +1,6 @@
 static struct Config config = {
 	/* font, separate different fonts with comma */
-	.font = "monospace:size=9,DejaVuSansMono:size=9",
+	.font = "monospace:size=12,Ubuntu Mono:size=12",
 
 	/* colors */
 	.background_color = "#FFFFFF",
@@ -30,5 +30,5 @@ static struct Config config = {
 	.iconpadding = 5,
 
 	/* area around the icon, the triangle and the separator */
-	.horzpadding = 8,
+	.horzpadding = 4,
 };
